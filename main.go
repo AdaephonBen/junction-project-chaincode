@@ -68,3 +68,9 @@ func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Respons
 	}
 	return shim.Error("Failed")
 }
+
+func main() {
+	if err := shim.Start(new(Event)); err != nil {
+		fmt.Println("Error starting...")
+	}
+}
