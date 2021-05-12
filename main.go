@@ -31,7 +31,7 @@ func (e *Event) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	if fn == "register-event" {
 		return RegisterEvent(stub, args)
 	}
-	return nil
+	return shim.Error("Unknown function")
 }
 
 func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
