@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+    mock:
+        image: adaephonben/mock-server:latest
+        ports: 
+          - "80:3000"
