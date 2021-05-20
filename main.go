@@ -67,7 +67,7 @@ func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Respons
 	}
 	if string(bodyBytes) == "Yes" {
 		stub.PutState(args[0], []byte(args[5]))
-		return shim.Success(nil)
+		return shim.Success([]byte("Hello world"))
 	}
 	return shim.Success(nil)
 }
