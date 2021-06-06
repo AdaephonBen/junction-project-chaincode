@@ -16,14 +16,6 @@ import (
 type SimpleChaincode struct {
 }
 
-type Event struct {
-	ID        string    `json:"id"`
-	Lanes     []int     `json:"lanes"`
-	Image     []byte    `json:"image"`
-	CreatedAt time.Time `json:"created_at"`
-	Metadata  string    `json:"metadata"`
-}
-
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	return shim.Success(nil)
 }
