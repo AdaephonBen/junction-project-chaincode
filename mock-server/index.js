@@ -12,11 +12,13 @@ function getRandomInt(min, max) {
 }
 
 app.post("/check", (req, res) => {
-  const random = getRandomInt(0, 2);
+  const random = getRandomInt(0, 3);
   if (random == 0) {
     res.send("No");
-  } else {
+  } else if (random == 1) {
     res.send("Yes");
+  } else {
+    res.send("Don't know");
   }
 });
 

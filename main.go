@@ -1,88 +1,91 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
-type Event struct {
-	ID        string    `json:"id"`
-	Lanes     []int     `json:"lanes"`
-	Image     []byte    `json:"image"`
-	CreatedAt time.Time `json:"created_at"`
-	Metadata  string    `json:"metadata"`
+// SimpleAsset implements a simple chaincode to manage an asset
+type SimpleAsset struct {
 }
 
-func (e *Event) Init(stub shim.ChaincodeStubInterface) peer.Response {
+// Init is called during chaincode instantiation to initialize any
+// data. Note that chaincode upgrade also calls this function to reset
+// or to migrate data.
+func (t *SimpleAsset) Init(stub shim.ChaincodeStubInterface) peer.Response {
+	// Get the args from the transaction proposal
+	args := stub.GetStringArgs()
+	if len(args) != 2 {
+		return shim.Error("Incorrect arguments. Expecting a key and a value")
+	}
+
+	// Set up any variables or assets here by calling stub.PutState()
+
+	// We store the key and the value on the ledger
+	err := stub.PutState(args[0], []byte(args[1]))
+	if err != nil {
+		return shim.Error(fmt.Sprintf("Failed to create asset: %s", args[0]))
+	}
 	return shim.Success(nil)
 }
 
-func (e *Event) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+// Invoke is called per transaction on the chaincode. Each transaction is
+// either a 'get' or a 'set' on the asset created by Init function. The Set
+// method may create a new asset by specifying a new key-value pair.
+func (t *SimpleAsset) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+	// Extract the function and args from the transaction proposal
 	fn, args := stub.GetFunctionAndParameters()
 
-	if fn == "register-event" {
-		return RegisterEvent(stub, args)
-	} else if fn == "get-event" {
-		return GetEvent(stub, args)
+	var result string
+	var err error
+	if fn == "set" {
+		result, err = set(stub, args)
+	} else { // assume 'get' even if fn is nil
+		result, err = get(stub, args)
 	}
-	return shim.Error("Unknown function")
-}
-
-func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	lane_1, _ := strconv.Atoi(args[1])
-	lane_2, _ := strconv.Atoi(args[2])
-	lanes := []int{lane_1, lane_2}
-
-	image := []byte(args[3])
-	unix_time_int, _ := strconv.Atoi(args[4])
-	unix_time := time.Unix(int64(unix_time_int), 0)
-
-	postBody, _ := json.Marshal(map[string]interface{}{
-		"id":         args[0],
-		"lanes":      lanes,
-		"image":      image,
-		"created_at": unix_time,
-		"metadata":   args[5],
-	})
-	responseBody := bytes.NewBuffer(postBody)
-
-	resp, err := http.Post("http://mock:3000/check", "application/json", responseBody)
 	if err != nil {
-		fmt.Println(err)
 		return shim.Error(err.Error())
 	}
-	defer resp.Body.Close()
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return shim.Error(err.Error())
-	}
-	if string(bodyBytes) == "Yes" {
-		stub.PutState(args[0], []byte(args[5]))
-		return shim.Success([]byte("Hello world"))
-	}
-	return shim.Success(nil)
+
+	// Return the result as success payload
+	return shim.Success([]byte(result))
 }
 
-func GetEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+// Set stores the asset (both key and value) on the ledger. If the key exists,
+// it will override the value with the new one
+func set(stub shim.ChaincodeStubInterface, args []string) (string, error) {
+	if len(args) != 2 {
+		return "", fmt.Errorf("Incorrect arguments. Expecting a key and a value")
+	}
+
+	err := stub.PutState(args[0], []byte(args[1]))
+	if err != nil {
+		return "", fmt.Errorf("Failed to set asset: %s", args[0])
+	}
+	return args[1], nil
+}
+
+// Get returns the value of the specified asset key
+func get(stub shim.ChaincodeStubInterface, args []string) (string, error) {
+	if len(args) != 1 {
+		return "", fmt.Errorf("Incorrect arguments. Expecting a key")
+	}
+
 	value, err := stub.GetState(args[0])
 	if err != nil {
-		fmt.Println(err.Error())
-		return shim.Error(err.Error())
+		return "", fmt.Errorf("Failed to get asset: %s with error: %s", args[0], err)
 	}
-	return shim.Success(value)
+	if value == nil {
+		return "", fmt.Errorf("Asset not found: %s", args[0])
+	}
+	return string(value), nil
 }
 
+// main function starts up the chaincode in the container during instantiate
 func main() {
-	if err := shim.Start(new(Event)); err != nil {
-		fmt.Println("Error starting...")
+	if err := shim.Start(new(SimpleAsset)); err != nil {
+		fmt.Printf("Error starting SimpleAsset chaincode: %s", err)
 	}
 }
