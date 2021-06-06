@@ -62,7 +62,7 @@ func (t *SimpleChaincode) RegisterEvent(stub shim.ChaincodeStubInterface, args [
 	}
 	if string(bodyBytes) == "Yes" {
 		stub.PutState(args[0], []byte(args[5]))
-		return shim.Success([]byte("x" + args[5]))
+		return shim.Success([]byte("x" + args[0] + args[5]))
 	}
 	return shim.Success(nil)
 }
@@ -73,7 +73,7 @@ func (t *SimpleChaincode) GetEvent(stub shim.ChaincodeStubInterface, args []stri
 		fmt.Println(err.Error())
 		return shim.Error(err.Error())
 	}
-	return shim.Success(value)
+	return shim.Success([]byte(args[0] + string(value)))
 }
 
 func main() {
