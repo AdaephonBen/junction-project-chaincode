@@ -13,6 +13,9 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
+type SimpleChaincode struct {
+}
+
 type Event struct {
 	ID        string    `json:"id"`
 	Lanes     []int     `json:"lanes"`
@@ -21,22 +24,22 @@ type Event struct {
 	Metadata  string    `json:"metadata"`
 }
 
-func (e *Event) Init(stub shim.ChaincodeStubInterface) peer.Response {
+func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	return shim.Success(nil)
 }
 
-func (e *Event) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	fn, args := stub.GetFunctionAndParameters()
 
 	if fn == "register-event" {
-		return RegisterEvent(stub, args)
+		return t.RegisterEvent(stub, args)
 	} else if fn == "get-event" {
-		return GetEvent(stub, args)
+		return t.GetEvent(stub, args)
 	}
 	return shim.Error("Unknown function")
 }
 
-func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *SimpleChaincode) RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	lane_1, _ := strconv.Atoi(args[1])
 	lane_2, _ := strconv.Atoi(args[2])
 	lanes := []int{lane_1, lane_2}
@@ -72,7 +75,7 @@ func RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Respons
 	return shim.Success(nil)
 }
 
-func GetEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
+func (t *SimpleChaincode) GetEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	value, err := stub.GetState(args[0])
 	if err != nil {
 		fmt.Println(err.Error())
@@ -82,7 +85,7 @@ func GetEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 }
 
 func main() {
-	if err := shim.Start(new(Event)); err != nil {
+	if err := shim.Start(new(SimpleChaincode)); err != nil {
 		fmt.Println("Error starting...")
 	}
 }
