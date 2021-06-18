@@ -13,6 +13,16 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
+type Event struct {
+	Id          string    `json:"id"`
+	Latitude    float64   `json:"latitude"`
+	Longitude   float64   `json:"longitude"`
+	Orientation float64   `json:"orientation"`
+	Image       []byte    `json:"image"`
+	CreatedAt   time.Time `json:"created_at"`
+	Metadata    string    `json:"metadata"`
+}
+
 type SimpleChaincode struct {
 }
 
@@ -32,21 +42,33 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) peer.Response
 }
 
 func (t *SimpleChaincode) RegisterEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
-	lane_1, _ := strconv.Atoi(args[1])
-	lane_2, _ := strconv.Atoi(args[2])
-	lanes := []int{lane_1, lane_2}
-
-	image := []byte(args[3])
-	unix_time_int, _ := strconv.Atoi(args[4])
-	unix_time := time.Unix(int64(unix_time_int), 0)
-
-	postBody, _ := json.Marshal(map[string]interface{}{
-		"id":         args[0],
-		"lanes":      lanes,
-		"image":      image,
-		"created_at": unix_time,
-		"metadata":   args[5],
-	})
+	Latitude, err := strconv.ParseFloat(args[1], 64)
+	if err != nil {
+		fmt.Println("Error while converting latitude to float")
+	}
+	Longitude, err := strconv.ParseFloat(args[2], 64)
+	if err != nil {
+		fmt.Println("Error while converting longitude to float")
+	}
+	Orientation, err := strconv.ParseFloat(args[3], 64)
+	if err != nil {
+		fmt.Println("Error while converting orientation to float")
+	}
+	TimestampInt, err := strconv.ParseInt(args[5], 10, 64)
+	if err != nil {
+		fmt.Println("Error while converting timestamp to int")
+	}
+	Timestamp := time.Unix(TimestampInt, 0)
+	var event = Event{
+		Id:          args[0],
+		Latitude:    Latitude,
+		Longitude:   Longitude,
+		Orientation: Orientation,
+		Image:       []byte(args[4]),
+		CreatedAt:   Timestamp,
+		Metadata:    args[6],
+	}
+	postBody, _ := json.Marshal(event)
 	responseBody := bytes.NewBuffer(postBody)
 
 	resp, err := http.Post("http://mock:3000/check", "application/json", responseBody)
@@ -61,8 +83,8 @@ func (t *SimpleChaincode) RegisterEvent(stub shim.ChaincodeStubInterface, args [
 		return shim.Error(err.Error())
 	}
 	if string(bodyBytes) == "Yes" {
-		stub.PutState(args[0], []byte(args[5]))
-		return shim.Success([]byte("x" + args[0] + args[5]))
+		stub.PutState(args[0], postBody)
+		return shim.Success(nil)
 	}
 	return shim.Success(nil)
 }
@@ -73,7 +95,7 @@ func (t *SimpleChaincode) GetEvent(stub shim.ChaincodeStubInterface, args []stri
 		fmt.Println(err.Error())
 		return shim.Error(err.Error())
 	}
-	return shim.Success([]byte(args[0] + string(value)))
+	return shim.Success(value)
 }
 
 func main() {
