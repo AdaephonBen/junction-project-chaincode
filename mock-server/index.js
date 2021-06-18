@@ -33,35 +33,8 @@ function mod(n, m) {
 }
 
 app.post("/check", (req, res) => {
-  const { eventLat, eventLong, carLat, carLong, carOrientation } = req.body;
-  const fieldOfView = 135; // Human eye has a horizontal FOV of 135 degrees
-  const farthestDistance = 10; // Assumed to be 10 metres for now
-
-  const eventLocation = geolocationUtils.createLocation(
-    eventLat,
-    eventLong,
-    "LatLon"
-  );
-  const carLocation = geolocationUtils.createLocation(
-    carLat,
-    carLong,
-    "LatLon"
-  );
-  const headingDistance = geolocationUtils.headingDistanceTo(
-    carLocation,
-    eventLocation
-  );
-  const withinFOV = isAngleBetween(
-    mod(carOrientation - fieldOfView / 2, 360),
-    mod(carOrientation + fieldOfView / 2, 360),
-    headingDistance.heading
-  );
-
-  if (headingDistance.distance < farthestDistance && withinFOV) {
-    res.send("Yes");
-  } else {
-    res.send("Don't know");
-  }
+  res.send("Yes");
+  console.log("Request came from ", req.ip);
 });
 
 app.listen(port, () => {
