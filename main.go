@@ -86,7 +86,7 @@ func (t *SimpleChaincode) RegisterEvent(stub shim.ChaincodeStubInterface, args [
 		stub.PutState(args[0], postBody)
 		return shim.Success(nil)
 	}
-	return shim.Error()
+	return shim.Error("Error")
 }
 
 func (t *SimpleChaincode) GetEvent(stub shim.ChaincodeStubInterface, args []string) peer.Response {
