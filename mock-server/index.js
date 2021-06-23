@@ -1,6 +1,5 @@
 const app = require("express")();
 const bodyParser = require("body-parser");
-const geolocationUtils = require("geolocation-utils");
 
 app.use(bodyParser.json()); // for parsing application/json
 
