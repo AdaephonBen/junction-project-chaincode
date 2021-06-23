@@ -5,6 +5,8 @@ app.use(bodyParser.json()); // for parsing application/json
 
 const port = 3000;
 
+let responses = ["No", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes"];
+
 function getRandomInt(min, max) {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -32,8 +34,10 @@ function mod(n, m) {
 }
 
 app.post("/check", (req, res) => {
-  res.send("Yes");
+  const currentResponse = responses.pop();
+  res.send(currentResponse);
   console.log("Request came from ", req.ip);
+  console.log("Responded with ", currentResponse);
 });
 
 app.listen(port, () => {
